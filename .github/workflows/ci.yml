@@ -4,9 +4,14 @@ name: CI build
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - master
+      - develop
+      - 'feature/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - master
+      - develop
 
 jobs:
   build:
