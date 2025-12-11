@@ -7,7 +7,6 @@ FROM registry.access.redhat.com/ubi9/openjdk-17:1.23
 
 ENV LANGUAGE='en_US:en'
 
-
 # We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=185 --from=build /workspace/target/quarkus-app/lib/ /deployments/lib/
 COPY --chown=185 --from=build /workspace/target/quarkus-app/*.jar /deployments/
