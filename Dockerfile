@@ -1,26 +1,22 @@
-# =======================
-# 1) Build stage
-# =======================
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /workspace
+COPY . .
+RUN mvn clean package -DskipTests
 
-COPY pom.xml .
-RUN mvn -q -e -DskipTests package || true
-
-COPY src src
-RUN mvn -q -DskipTests package
-
-# =======================
-# 2) Runner stage
-# =======================
 FROM registry.access.redhat.com/ubi9/openjdk-17:1.23
 
-WORKDIR /deployments
+ENV LANGUAGE='en_US:en'
 
-COPY --from=build /workspace/target/quarkus-app/lib/ ./lib/
-COPY --from=build /workspace/target/quarkus-app/*.jar ./
-COPY --from=build /workspace/target/quarkus-app/app/ ./app/
-COPY --from=build /workspace/target/quarkus-app/quarkus/ ./quarkus/
+
+# We make four distinct layers so if there are application changes the library layers can be re-used
+COPY --chown=185 --from=build /workspace/target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 --from=build /workspace/target/quarkus-app/*.jar /deployments/
+COPY --chown=185 --from=build /workspace/target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 --from=build /workspace/target/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
-CMD ["java", "-jar", "/deployments/quarkus-run.jar"]
+USER 185
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
+
+ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh" ]
